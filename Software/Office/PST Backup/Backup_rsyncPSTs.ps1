@@ -1,7 +1,7 @@
-<#
+<# 
 Script Name:  Backup_rsyncPSTs.ps1
 By:  Zack Thompson / Created:  1/2/2015
-Version:  1.2 / Updated:  2/17/2015 / By:  ZT
+Version:  1.3 / Updated:  2/23/2015 / By:  ZT
 
 Description:  This script uses rsync to incrementally backup local PST 
 	files. Backup destination is the specified in a variable with exact 
@@ -31,13 +31,11 @@ If($ENV:Processor_Architecture -eq $cpuArch){
 Else {
 	$script:osArch="System32"
 }
-
 # ============================================================
 # Define variables & locations
 # ============================================================
 $user = $env:username
 $computer = $env:computername
-$serverLocation = "\\bbcfile\Installs\GPO Files\Scripts\PST_Scripts\rsyncbin"
 $IT_Staging = "C:\Windows\$osArch\IT_Staging\rsyncbin\"
 $Rsync = "$($IT_Staging)rsync.exe"
 $LocalPSTLoc = "/cygdrive/c/Users/$user/AppData/Local/Microsoft/Outlook/PST_Files/"
@@ -51,18 +49,13 @@ $PSTLocation = "C:\Users\$user\AppData\Local\Microsoft\Outlook\PST_Files\"
 # Check and see if there are any PSTs in the users' directory.
 $AnyPSTs = Get-ChildItem *.pst -Path "$PSTLocation" -Recurse -ErrorAction SilentlyContinue
 
-If ($AnyPSTs.length -le 0) {
+If ($AnyPSTs -eq $null) {
 	# If there are not any PSTs in the directory, then exit the script.
 	Exit
 }
-
+# Check to see if the RsyncBin location has been created before continuing.
+ElseIf(Test-Path -Path $IT_Staging){
 Write-Output "Script started on:  $(Get-Date -UFormat "%m-%d-%Y @ %r")" | Out-File ($logfile) -append
-
-# Check to see if the RsyncBin location has been created, and if not create it and copy down the required RSync files.
-if(!(Test-Path -Path $IT_Staging)){
-	New-Item -ItemType directory -Path $IT_Staging
-	Copy-Item $serverLocation\* $IT_Staging
-}
 
 # Setup the process startup info
 $processRsync = New-Object System.Diagnostics.ProcessStartInfo
@@ -117,4 +110,5 @@ If ($stderr.length -ne 0) {
 	$SMTPMessage = New-Object System.Net.Mail.MailMessage $FromAddress, $ToAddress, $MessageSubject, $MessageBody
 	$SMTPClient = New-Object System.Net.Mail.SMTPClient $SendingServer
 	$SMTPClient.Send($SMTPMessage)
+}
 }
