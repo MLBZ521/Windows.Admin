@@ -1,12 +1,13 @@
 <#
 Script Name:  Move_PSTs.ps1
 By:  Zack Thompson / Created:  12/29/2014
-Version:  1.2 / Updated:  2/18/2015 / By:  ZT
+Version:  1.4 / Updated:  3/24/2015 / By:  ZT
 
-Description:  This script checks for PST files that are attached to Outlook, 
-	then searches the user's profile directories for PST files, and then 
-	moves them to the specified destination and reattaches the previously 
-	attached PST files.  It also accounts for duplicate file names.
+Description:  This script first checks for PST files that are attached to 
+	Outlook, moves the attached PSTs to the specified destination, and then
+	reattaches the previously attached PST files to Outlook.  Then searches 
+	the user's profile directories for PST files and moves them to the 
+	specified destination.  It also accounts for duplicate PST file names.
 	(*This has to be a user login script.*)
 #>
 
@@ -22,23 +23,6 @@ Write-Host "**                                                       **"
 Write-Host "***********************************************************"
 Write-Host "***********************************************************"
 
-##### The next Function is for testing purposes and can be removed.
-##### Just checking to see if the DisplayNames in Outlook stay the same.
-
-# ============================================================
-Function PSTNamesCheck {
-    # Output to log the Old PST Names
-    Write-Output "Old PST Names:" | Out-File $LogFile -append
-    ForEach ($pstName2 in $arrayNames) {
-        Write-Output " $($pstName2)" | Out-File $LogFile -Append
-    }
-    
-    # Output to log the New PST Names
-    Write-Output "New PST Names:" | Out-File $LogFile -append
-    ForEach ($pstItem2 in $item2) {
-        Write-Output " $($pstItem2.DisplayName)" | Out-File $LogFile -Append
-    }
-}
 # ============================================================
 # This function is called when there are no PST files found attached to Outlook or when they are already in the correct location.
 Function NoPSTFiles {
@@ -49,6 +33,8 @@ Function NoPSTFiles {
 	while([System.Runtime.Interopservices.Marshal]::ReleaseComObject($NameSpace)){}
 	while([System.Runtime.Interopservices.Marshal]::ReleaseComObject($Outlook)){}
 	[System.GC]::Collect()
+	Start-Sleep -s 6
+	Stop-Process -name Outlook | Out-Null
 	Wait-Process -name Outlook
 
 	# Call ProfilePSTs Function.
@@ -80,7 +66,7 @@ Function ProfilePSTs {
 	Else {
 	    Write-Output "$( Get-Date -UFormat "%r |" ) There were no PST files found in $($user)'s profile." | %{Write-Host $_; Out-File $LogFile -InputObject $_ -Append}
 	}
-		Write-Output "$( Get-Date -UFormat "%r |" ) Script complete!" | %{Write-Host $_; Out-File $LogFile -InputObject $_ -Append}
+		Write-Output "$( Get-Date -UFormat "%r |" ) Script complete! $($Return)" | %{Write-Host $_; Out-File $LogFile -InputObject $_ -Append}
 
 	# eos
 }
@@ -99,6 +85,8 @@ $LogFile = $Destination + "Log_MovedPSTs.txt"
 
 # Get date for Log File Entries.
 $date = Get-Date -UFormat "%m-%d-%Y %r"
+
+$Return = [char]0x000A
 
 # ============================================================
 # Script Body
@@ -134,6 +122,8 @@ If ($ProfileExists -eq $null) {
 	while([System.Runtime.Interopservices.Marshal]::ReleaseComObject($NameSpace)){}
 	while([System.Runtime.Interopservices.Marshal]::ReleaseComObject($Outlook)){}
 	[System.GC]::Collect()
+	Start-Sleep -s 6
+	Stop-Process -name Outlook | Out-Null
     Wait-Process -name Outlook
 
 	# eos
@@ -150,7 +140,6 @@ Else {
 		# Define empty arrays.
 		$arrayNames = @()
 		$arrayPaths = @()
-		$arrayNewNames = @()
 		$arrayNewPaths = @()
 		
 		# Insert PST info into arrays, but if PST is already in the correct location, do not add to array.
@@ -196,6 +185,8 @@ Else {
 		while([System.Runtime.Interopservices.Marshal]::ReleaseComObject($NameSpace)){}
 		while([System.Runtime.Interopservices.Marshal]::ReleaseComObject($Outlook)){}
 		[System.GC]::Collect()
+		Start-Sleep -s 15
+		Stop-Process -name Outlook | Out-Null
 		Wait-Process -name Outlook
   
 		# Move PST Files to New Location.
@@ -223,37 +214,33 @@ Else {
 		}
 
 		# Open Outlook again.
-		$Outlook = New-Object -comObject Outlook.Application
+		$Outlook = New-Object -ComObject Outlook.Application
 		$NameSpace = $Outlook.getNamespace("MAPI")
 
 		# Add PST Files back to Outlook.
 		Write-Output "$( Get-Date -UFormat "%r |" ) Attaching the following PSTs back to Outlook:" | %{Write-Host $_; Out-File $LogFile -InputObject $_ -Append}
 		ForEach ($pstItem in $arrayNewPaths) {
-			$NameSpace.AddStore($pstItem)
-			Write-Output "$( Get-Date -UFormat "%r |" )  $($pstItem)" | %{Write-Host $_; Out-File $LogFile -InputObject $_ -Append}
+			# Check to see if the PST is in the new location before adding it back; this prevents creating a new, empty PST with the same name.
+			If (Test-Path "$($pstItem)") {
+				$NameSpace.AddStore($pstItem)
+				Write-Output "$( Get-Date -UFormat "%r |" )  $($pstItem)" | %{Write-Host $_; Out-File $LogFile -InputObject $_ -Append}
+			}
+			Else {
+				Write-Output "$( Get-Date -UFormat "%r |" )  It appears the following PST may have been in use and unable to be moved:  $($pstItem)" | %{Write-Host $_; Out-File $LogFile -InputObject $_ -Append}
+			}
 		}
-
-##### This section is for testing purposes and can be removed.
-##### Just checking to see if the DisplayNames in Outlook stay the same.
-      
-    # Pull New PST information from Outlook.
-    $item2 = $NameSpace.stores | where {$_.ExchangeStoreType -eq 3} | Select-Object DisplayName
-    
-##### To this point can be deleted.
 
 		# Close Outlook & Release ComObject references that are open.
 		$Outlook.Quit()
 		while([System.Runtime.Interopservices.Marshal]::ReleaseComObject($NameSpace)){}
 		while([System.Runtime.Interopservices.Marshal]::ReleaseComObject($Outlook)){}
 		[System.GC]::Collect()
+		Start-Sleep -s 6
+		Stop-Process -name Outlook | Out-Null
 		Wait-Process -name Outlook
 
 		# Call ProfilePSTs Function.
 		ProfilePSTs
-
-##### Call Function PSTNamesCheck - Can be removed
-	PSTNamesCheck
-##### To this point can be deleted.
 
 	}
 	Else {
