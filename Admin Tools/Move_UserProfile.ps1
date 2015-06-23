@@ -1,12 +1,12 @@
 <#
 Script Name:  Move_UserProfile.ps1
 By:  Zack Thompson / Created:  2/3/2015
-Version:  .1 / Updated:  2/3/2015 / By:  ZT
+Version:  .2 / Updated:  2/27/2015 / By:  ZT
 
 Description:  This script will move the specified users data from one PC
 	to another PC.  The specificed folders will be moved, if more folders
 	are needed for your environment, they can be added in the $Profile 
-	variable.
+	variable. 
 
 #>
 
@@ -33,11 +33,11 @@ $Profile = "Downloads",
 "AppData\Local\Mozilla",
 "AppData\Local\Google",
 "AppData\Roaming\Mozilla",
-"\AppData\Local\Microsoft\Outlook\PST_Files\"
+"AppData\Local\Microsoft\Outlook\PST_Files\"
 
 # ============================================================
-# Function to prompt for action.
-Function Prompt {
+# Function to prompt admin for action.
+Function PromptAdmin {
 	$Caption = "Choose Action";
 	$Message = "Do you want to copy $($user)'s files from $($OldPC) to $($NewPC)?"
 	$Yes = New-Object System.Management.Automation.Host.ChoiceDescription "&Yes","Yes";
@@ -55,17 +55,41 @@ Function MoveFiles {
 			$OldFolder = $OldLocation + "\" + $Folder
 			$NewFolder = $NewLocation + "\" + $Folder
 			
-			Copy-Item -ErrorAction silentlyContinue -recurse $OldFolder\* $NewFolder
-		
-	<#	If ($Folder -eq "AppData\Local\Mozilla") {
-			rename-item $NewFolder "$($NewFolder).old"
-		}
-		If ($Folder -eq "AppData\Roaming\Mozilla") {
-			rename-item $NewFolder "$($NewFolder).old"
-		}
-		If ($Folder -eq "AppData\Local\Google") {
-			rename-item $NewFolder "$($NewFolder).old"
-		} #>
+			If (Test-Path -Path $OldFolder) {
+				If ($Folder -eq "AppData\Local\Mozilla") {
+					$Command = { 
+						$FireFoxOpen = Get-Process -Name Firefox -ErrorAction SilentlyContinue
+						If ($FireFoxOpen -ne $null) {
+							Stop-Process -Name Firefox
+						}
+					}
+					Invoke-Command -Computername "Lab1-it"  -Scriptblock $Command
+					rename-item $NewFolder "$($NewFolder).old"
+				}
+				ElseIf ($Folder -eq "AppData\Roaming\Mozilla") {
+					$Command2 = { 
+						$FireFoxOpen2 = Get-Process -Name Firefox -ErrorAction SilentlyContinue
+						If ($FireFoxOpen2 -ne $null) {
+							Stop-Process -Name Firefox
+						}
+					}
+					Invoke-Command -Computername "Lab1-it"  -Scriptblock $Command2
+					rename-item $NewFolder "$($NewFolder).old"
+				}
+				ElseIf ($Folder -eq "AppData\Local\Google") {
+					$Command3 = { 
+						$ChromeOpen = Get-Process -Name Chrome -ErrorAction SilentlyContinue
+						If ($ChromeOpen -ne $null) {
+							Stop-Process -Name Chrome
+						}
+					}
+					Invoke-Command -Computername "Lab1-it"  -Scriptblock $Command3
+					rename-item $NewFolder "$($NewFolder).old"
+				}
+
+				# Copy OldFolder contents to NewFolder
+				Copy-Item -ErrorAction SilentlyContinue -recurse $OldFolder\* $NewFolder
+			}
 		}
 	}
 	Else {
@@ -78,7 +102,7 @@ Function MoveFiles {
 # ============================================================
 
 # Call Profile Function.
-Prompt
+PromptAdmin
 
 $OnNewPC = Test-Connection -Computername $NewPC -Quiet
 $OnOldPC = Test-Connection -Computername $OldPC -Quiet
