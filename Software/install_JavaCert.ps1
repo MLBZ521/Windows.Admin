@@ -2,7 +2,7 @@
 
 Script Name:  install_JavaCert.ps1
 By:  Zack Thompson | Created:  11/23/2014
-Version:  1.1 | Updated:  1/23/2015 | By:  ZT
+Version:  1.2 | Updated:  3/9/2015 | By:  ZT
 
 Description:  This script installs a certificate into the default Java cacerts file.
 	This certificate was used to sign the DeploymentRuleSet.jar package to whitelist
@@ -48,21 +48,12 @@ if(!(Test-Path -Path $IT_Staging)){
 	}
 }
 # ============================================================
-# Check to see log-file exists.
-Function LogCheck{
-if(!(Test-Path -Path $IT_Staging\"Log_$logName.txt")){
-$script:noLog="NotInstalled"
-	}
-}
-# ============================================================
 # Create log-file and append install date to file.
 Function CreateLog {
 Set-Location -Path $IT_Staging
 $date = Get-Date
-Write-Output "Certificate installed on:" $date | Out-File "Log_$logName.txt"
+Write-Output "Certificate installed on:" $date | Out-File $logName -append
 }
-# ============================================================
-
 # ============================================================
 # Script Body
 # ============================================================
@@ -72,32 +63,24 @@ ProcArch
 
 # Define variables
 $IT_Staging = "C:\Windows\$osArch\IT_Staging\Java\"
-$keyTool = "C:\$ProgramFiles\Java\jre7\bin\keytool.exe"
-$cacerts = "C:\$ProgramFiles\java\jre7\lib\security\cacerts"
+$keyTool = "C:\$ProgramFiles\Java\jre8\bin\keytool.exe"
+$cacerts = "C:\$ProgramFiles\java\jre8\lib\security\cacerts"
 $signingCert = "\\Share\Location\CodeSignCert.cer"
 $alias = "fb9fcc11-bfe5-4613-88fc-460ea7e29230"
-$logName = "Java7U75_CertInstall"
+$alias = "abcdefgh-ijkl-mnop-qrst-uvwxyz012345"
+$logName = "Log_JavaCertInstall.txt"
 
 # Call DirCheck Function
 DirCheck
-# Call LogCheck Function
-LogCheck
 
-If ($noLog -eq "NotInstalled") {
-	Write-Host "Certificate has not been install"
-	Write-Host "Installing Certificate..."
+# Installs Certificate
+Write-Host "Installing Certificate..."
+Start-Process $keytool -ArgumentList "-importcert -keystore `"$cacerts`" -storepass changeit -file `"$signingCert`" -alias `"$alias`" -noprompt" -NoNewWindow -Wait
+Write-Host "Certificate has been installed on this PC."		
 
-	# Installs Certificate
-	Start-Process $keytool -ArgumentList "-importcert -keystore `"$cacerts`" -storepass changeit -file `"$signingCert`" -alias `"$alias`" -noprompt" -NoNewWindow -Wait
-		
-	# Call CreateLog Function
-	CreateLog
-	Write-Host "Created log file."
-	}
-Else {
-	Write-Host "Certificate has been installed on this PC."
-	}
-
+# Call CreateLog Function
+CreateLog
+Write-Host "Appended log file."
 Write-Host "Script completed successfully!"
 
 # eos
