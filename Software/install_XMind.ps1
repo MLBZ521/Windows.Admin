@@ -2,16 +2,16 @@
 
 Script Name:  Install_XMind.ps1
 By:  Zack Thompson / Created:  9/18/2014
-Version:  1.3 / Updated:  9/18/2014 / By:  ZT
+Version:  2.1.3 / Updated:  12/30/2014 / By:  ZT
 
-Description:  This script installs XMind. (*This has to be a user login script.*)
+Description:  This script installs XMind. (*This has to be a computer login script.*)
 
 #>
 
 Write-Host "***********************************************************"
 Write-Host "***********************************************************"
 Write-Host "**                                                       **"
-Write-Host "**					  Installing XMind					 **"
+Write-Host "**                    Installing XMind                   **"
 Write-Host "**                                                       **"
 Write-Host "***********************************************************"
 Write-Host "***********************************************************"
@@ -38,16 +38,16 @@ if(!(Test-Path -Path $localLocation)){
 # ============================================================
 # Check to see log-file exists.
 Function LogCheck{
-if(!(Test-Path -Path $localLocation\Log_XMind.txt)){
+if(!(Test-Path -Path $localLocation\"Log_$SWinstaller.txt")){
 $script:noLog="NotInstalled"
 }
 }
 # ============================================================
 # Copy files to local disk and execute.
 Function CopyExecute {
-cd $localLocation
+Set-Location -Path $localLocation
 Copy-Item $serverLocation\* $localLocation
-Start-Process "xmind-windows-3.4.1.201401221918.exe" -ArgumentList "/norestart /loadinf=xmind_install-settings.inf" -Wait
+Start-Process $SWinstaller -ArgumentList "/verysilent /norestart /loadinf=xmind_install-settings.inf" -Wait
 }
 # ============================================================
 # If 32bit, delete Bonjour installer files to prevent XMind
@@ -57,7 +57,7 @@ Function arch32Do {
 Remove-Item "C:\Program Files\XMind\thirdparty\Bonjour.msi" -force
 Remove-Item "C:\Program Files\XMind\thirdparty\Bonjour64.msi" -force
 Set-Location -Path Registry::HKLM\SOFTWARE\Microsoft\Windows\CurrentVersion\Uninstall\XMind_is1
-Set-ItemProperty . DisplayName "XMind 2013 (v3.4.1) - $Org"
+Set-ItemProperty . DisplayName $SWversion
 }
 # ============================================================
 # If 64bit, delete Bonjour installer files to prevent XMind
@@ -67,24 +67,17 @@ Function arch64Do {
 Remove-Item "C:\Program Files (x86)\XMind\thirdparty\Bonjour.msi" -force
 Remove-Item "C:\Program Files (x86)\XMind\thirdparty\Bonjour64.msi" -force
 Set-Location -Path Registry::HKLM\SOFTWARE\Wow6432Node\Microsoft\Windows\CurrentVersion\Uninstall\XMind_is1
-Set-ItemProperty . DisplayName "XMind 2013 (v3.4.1) - $Org"
+Set-ItemProperty . DisplayName $SWversion
 }
 # ============================================================
 # Create log-file and append install date to file.
 Function CreateLog {
-Write-Output "XMind installed on: " | Out-File Log_XMind.txt
-Get-Date | Out-File Log_XMind.txt -append	
-}
-# ============================================================
-# Move preference files into place (this has to be done per user).
-Function MovePrefs {
-cd $localLocation
-$prefDIR="$env:AppData\XMind\workspace-cathy\.metadata\.plugins\org.eclipse.core.runtime\.settings\"
-if(!(Test-Path -Path $prefDIR)){
-    New-Item -ItemType directory -Path $prefDIR
-}
-Copy-Item net.xmind.verify.prefs $prefDIR
-Copy-Item org.xmind.cathy.prefs $prefDIR
+Set-Location -Path $localLocation
+$date = Get-Date
+Write-Output $SWversion "Installed on:" $date | Out-File "Log_$SWinstaller.txt"
+
+# This generic log-file is for the user preferences script.
+Write-Output "XMind is installed, copy user preferences on login." $date | Out-File Log_XMind.txt -append
 }
 # ============================================================
 
@@ -94,13 +87,15 @@ Copy-Item org.xmind.cathy.prefs $prefDIR
 
 # Call ProcArch Function
 ProcArch
-Write-Host "OS Architecture is:  $osArch"
 
 # Define variables & locations
-$newDir="XMind"
-$serverLocation="\\bbcfile\Installs\GPO Files\Software Installs\XMind"
+$SWname="XMind"
+$SWUpdate="\xmind-windows-3.5.1.201411201906"
+$serverLocation="\\bbcfile\Installs\GPO Files\Software Installs\$SWname$SWUpdate"
 $IT_Staging="C:\Windows\$osArch\IT_Staging"
-$localLocation="$IT_Staging\$newDir"
+$localLocation="$IT_Staging\$SWname"
+$SWversion="XMind 6 (v3.5.1.201411201906) - $Org"
+$SWinstaller="xmind-windows-3.5.1.201411201906.exe"
 $Org=""
 
 # Call DirCheck Function
@@ -109,7 +104,7 @@ DirCheck
 LogCheck
 
 If ($noLog -eq "NotInstalled") {
-Write-Host "XMind is not Installed on this PC"
+Write-Host "XMind or latest version is not installed on this PC"
 	# Call CopyExecute Function
 	CopyExecute
 Write-Host "Installing XMind..."
@@ -127,12 +122,7 @@ Write-Host "Removing files and updating registry after installation..."
 	Write-Host "Created log file."
 }
 Else {
-Write-Host "XMind is currently installed on this PC."
+Write-Host "Latest version of XMind is currently installed on this PC."
 }
-
-# Call MovePrefs Function
-MovePrefs
-Write-Host "Moved preference files into place for current user."
-
 Write-Host "Script completed successfully!"
 # eos
