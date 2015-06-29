@@ -2,7 +2,7 @@
 
 Script Name:  Install_XMind.ps1
 By:  Zack Thompson / Created:  9/18/2014
-Version:  2.1.3 / Updated:  12/30/2014 / By:  ZT
+Version:  2.1.4 / Updated:  5/11/2015 / By:  ZT
 
 Description:  This script installs XMind. (*This has to be a computer login script.*)
 
@@ -90,12 +90,12 @@ ProcArch
 
 # Define variables & locations
 $SWname="XMind"
-$SWUpdate="\xmind-windows-3.5.1.201411201906"
+$SWUpdate="\xmind-windows-3.5.2.201504270119"
 $serverLocation="\\bbcfile\Installs\GPO Files\Software Installs\$SWname$SWUpdate"
 $IT_Staging="C:\Windows\$osArch\IT_Staging"
 $localLocation="$IT_Staging\$SWname"
-$SWversion="XMind 6 (v3.5.1.201411201906) - $Org"
-$SWinstaller="xmind-windows-3.5.1.201411201906.exe"
+$SWversion="XMind 6 (v3.5.2.201504270119) - $Org"
+$SWinstaller="xmind-windows-3.5.2.201504270119.exe"
 $Org=""
 
 # Call DirCheck Function
