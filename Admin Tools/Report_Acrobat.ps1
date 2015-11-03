@@ -2,7 +2,7 @@
 
 Script Name:  Report_Acrobat.ps1
 By:  Zack Thompson / Created:  5/15/2015
-Version:  2.0 / Updated:  9/22/2015 / By:  ZT
+Version:  2.1 / Updated:  9/23/2015 / By:  ZT
 
 Description:  This script pulls the encrypted Acrobat product key from a 
     remote computer and then decrypts it.  It logs all information as is goes.
@@ -129,7 +129,7 @@ ForEach ($entry in $list) {
             If ($VersionBranch -eq 9) {
                 # Pull the encrypted serial number from remote computer registry
 
-                # Orginal line, but only works locally
+                # Original line, but only works locally
                 # $Encrypted = Get-ChildItem -Path "HKLM:\SOFTWARE$($64BitReg)\Adobe\Adobe Acrobat\$($VersionBranch).0\Registration" | Get-ItemProperty | Select-Object -Property Serial
 
                 # This version uses a third party module, and would work, but trying to do this with built-in commands
@@ -147,12 +147,13 @@ ForEach ($entry in $list) {
                 $XMLFile = Get-ChildItem -Path $XMLlocation | ForEach-Object { $_.FullName }
                 [xml]$AdobeXML = Get-Content $XMLFile
                 $Convert = $AdobeXML.software_identification_tag.serial_number
+				$Title =  $AdobeXML.software_identification_tag.product_title
             }
 
             $Serial = ConvertFrom-EncryptedAdobeKey ($Convert.Trim())
 
             # Write to log file.
-    		"$Computer,$Version,$Serial" | %{Write-Host $_; Out-File $AcrobatLog -InputObject $_ -Append}
+    		"$Computer,$Title,$Version,$Serial" | %{Write-Host $_; Out-File $AcrobatLog -InputObject $_ -Append}
 		}
 
     	# If Acrobat is not found, write to log file
