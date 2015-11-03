@@ -2,15 +2,15 @@
 
 Script Name:  install_JavaCert.ps1
 By:  Zack Thompson | Created:  11/23/2014
-Version:  1.2 | Updated:  3/9/2015 | By:  ZT
+Version:  1.3 | Updated:  9/11/2015 | By:  ZT
 
 Description:  This script installs a certificate into the default Java cacerts file.
 	This certificate was used to sign the DeploymentRuleSet.jar package to whitelist
-	Java applets that are accessed.  If this is not done, Firefox and Chrome
-	will fail the authentication of the DeploymentRuleSet.jar package and it will
-	only work on Internet Explorer.
+	Java applets that are pre-approved.  If this is not done, Firefox will fail the 
+	authentication of the DeploymentRuleSet.jar package and it will	only work on 
+	Internet Explorer.
 
-Note:  (*This has to be a computer login script.*)
+Note:  (*This has to be a computer login script that runs AFTER a Java update if present.*)
 
 #>
 
@@ -31,7 +31,7 @@ Write-Host
 # Check Processor Architecture (32bit vs 64bit).
 Function ProcArch{
 $cpuArch="AMD64"
-if($ENV:Processor_Architecture -eq $cpuArch){
+If ($ENV:Processor_Architecture -eq $cpuArch) {
 	$script:osArch="SysWow64"
 	$script:ProgramFiles="Program Files (x86)"
 	}
@@ -41,20 +41,6 @@ Else {
 	}
 }
 # ============================================================
-# Check to see directory exists and create it if not.
-Function DirCheck {
-if(!(Test-Path -Path $IT_Staging)){
-    New-Item -ItemType directory -Path $IT_Staging
-	}
-}
-# ============================================================
-# Create log-file and append install date to file.
-Function CreateLog {
-Set-Location -Path $IT_Staging
-$date = Get-Date
-Write-Output "Certificate installed on:" $date | Out-File $logName -append
-}
-# ============================================================
 # Script Body
 # ============================================================
 
@@ -62,25 +48,38 @@ Write-Output "Certificate installed on:" $date | Out-File $logName -append
 ProcArch
 
 # Define variables
-$IT_Staging = "C:\Windows\$osArch\IT_Staging\Java\"
 $keyTool = "C:\$ProgramFiles\Java\jre8\bin\keytool.exe"
 $cacerts = "C:\$ProgramFiles\java\jre8\lib\security\cacerts"
 $signingCert = "\\Share\Location\CodeSignCert.cer"
-$alias = "fb9fcc11-bfe5-4613-88fc-460ea7e29230"
-$alias = "abcdefgh-ijkl-mnop-qrst-uvwxyz012345"
-$logName = "Log_JavaCertInstall.txt"
+$alias = "abcd-1234-efgh-5678-ijkl-90mnopqrstuv"
 
-# Call DirCheck Function
-DirCheck
+# Setup the process startup info
+$processCheck = New-Object System.Diagnostics.ProcessStartInfo
+$processCheck.FileName = "$keytool"
+$processCheck.Arguments = "-list -keystore `"$cacerts`" -storepass changeit -alias `"$alias`" -noprompt"
+$processCheck.UseShellExecute = $false
+$processCheck.CreateNoWindow = $true
+$processCheck.RedirectStandardOutput = $true
 
-# Installs Certificate
-Write-Host "Installing Certificate..."
-Start-Process $keytool -ArgumentList "-importcert -keystore `"$cacerts`" -storepass changeit -file `"$signingCert`" -alias `"$alias`" -noprompt" -NoNewWindow -Wait
-Write-Host "Certificate has been installed on this PC."		
+# Create a process object using the startup info
+$process = New-Object System.Diagnostics.Process
+$process.StartInfo = $processCheck
 
-# Call CreateLog Function
-CreateLog
-Write-Host "Appended log file."
-Write-Host "Script completed successfully!"
+# Start the process
+Write-Host "Checking for certificate..."
+$process.Start() | Out-Null
+
+# Get output from Standard Output
+$stdout = $process.StandardOutput.ReadToEnd()
+
+If ($stdout -match "does not exist") {
+	# Installs Certificate
+	Write-Host "Certificate not found; installing certificate..."
+	Start-Process $keytool -ArgumentList "-importcert -keystore `"$cacerts`" -storepass changeit -file `"$signingCert`" -alias `"$alias`" -noprompt" -NoNewWindow -Wait
+	Write-Host "Certificate has been installed on this system."
+    }
+Else {
+    Write-Host "Certificate has already been installed on this system."
+	}
 
 # eos
