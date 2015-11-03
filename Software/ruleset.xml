@@ -1,0 +1,113 @@
+<ruleset version="1.0+">
+	
+	<rule>
+		<!-- To Allow Kronos -->
+		<id location="http://kronos.domain.com" />
+		<action permission="run" />
+	</rule>
+	<rule>
+		<!-- To Allow Kronos-Test -->
+		<id location="http://kronos-test.domain.com" />
+		<action permission="run" />
+	</rule>
+	<rule>
+		<!-- Allow for Regions Website -->
+		<id location="https://itreasury.regions.com" />
+		<action permission="run" />
+	</rule>
+	<rule>
+		<!-- To allow for D-Link Switch -->
+		<id location="http://172.16.2.20" />
+		<action permission="run" />
+	</rule>
+	<rule>
+		<!-- To allow for D-Link Switch -->
+		<id location="http://172.16.2.27" />
+		<action permission="run" />
+	</rule>
+	<rule>
+		<!-- To allow for Tech Services Device -->
+		<id location="http://172.16.10.225" />
+		<action permission="run" version="SECURE-1.7.0_75" />
+	</rule>
+	<rule>
+		<!-- To allow for Tech Services Device -->
+		<id location="http://172.16.10.227" />
+		<action permission="run" version="SECURE-1.7.0_75" />
+	</rule>
+	<rule>
+		<!-- To allow for Tech Services Device -->
+		<id location="http://172.16.11.11" />
+		<action permission="run" version="SECURE-1.7.0_75" />
+	</rule>
+	<rule>
+		<!-- To allow for Printer -->
+		<id location="http://172.16.14.31" />
+		<action permission="run" />
+	</rule>
+	<rule>
+		<!-- To allow for Printer -->
+		<id location="http://172.16.14.43" />
+		<action permission="run" />
+	</rule>
+	<rule>
+		<!-- To allow for Printer -->
+		<id location="http://172.16.14.44" />
+		<action permission="run" />
+	</rule>
+	<rule>
+		<!-- To allow for Printer -->
+		<id location="http://172.16.14.55" />
+		<action permission="run" />
+	</rule>
+	<rule>
+		<!-- To allow for Tech Services Device -->
+		<id location="http://172.16.16.4" />
+		<action permission="run" />
+	</rule>
+	<rule>
+		<!-- To allow for HVAC Device -->
+		<id location="http://172.16.10.240" />
+		<action permission="run" />
+	</rule>
+	<rule>
+		<!-- To allow for HVAC Device -->
+		<id location="http://172.16.10.244" />
+		<action permission="run" />
+	</rule>
+	<rule>
+		<!-- To allow for HVAC Device -->
+		<id location="http://172.16.10.245" />
+		<action permission="run" />
+	</rule>
+	<rule>
+		<!-- To allow for HVAC Device -->
+		<id location="http://172.16.10.246" />
+		<action permission="run" />
+	</rule>
+	<rule>
+		<!-- To allow for HVAC Device -->
+		<id location="http://192.168.1.159" />
+		<action permission="run" />
+	</rule>
+	<rule>
+		<!-- To allow for HVAC Device -->
+		<id location="http://10.8.0.99" />
+		<action permission="run" />
+	</rule>
+	<rule>
+		<!-- To allow for Avocent KVM Device -->
+		<id location="https://172.16.100.254" />
+		<action permission="run" />
+	</rule>
+	<rule>
+		<!-- To allow for iBR9000 -->
+		<id location="http://servername" />
+		<action permission="run" />
+	</rule>
+		<rule>
+		<!-- To allow for iBR9000 -->
+		<id location="http://servername.domain.com" />
+		<action permission="run" />
+	</rule>
+</ruleset>
