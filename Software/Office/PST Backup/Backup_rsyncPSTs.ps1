@@ -1,4 +1,5 @@
-<# 
+<#
+
 Script Name:  Backup_rsyncPSTs.ps1
 By:  Zack Thompson / Created:  1/2/2015
 Version:  1.3 / Updated:  2/23/2015 / By:  ZT
@@ -6,7 +7,9 @@ Version:  1.3 / Updated:  2/23/2015 / By:  ZT
 Description:  This script uses rsync to incrementally backup local PST 
 	files. Backup destination is the specified in a variable with exact 
 	location configured on the server.
-	(*This should be run as a scheduled task in the user evironment.*)
+	
+	(*This should be run as a logoff script in the user evironment.*)
+	
 #>
 
 Write-Host "***********************************************************"
