@@ -2,7 +2,7 @@
 
 Script Name:  Report_Acrobat.ps1
 By:  Zack Thompson / Created:  5/15/2015
-Version:  2.2 / Updated:  9/25/2015 / By:  ZT
+Version:  2.3 / Updated:  11/11/2015 / By:  ZT
 
 Description:  This script pulls the encrypted Acrobat product key from a 
     remote computer and then decrypts it.  It logs all information as is goes.
@@ -49,11 +49,12 @@ Function ConvertFrom-EncryptedAdobeKey {
 # Function to prompt admin for action.
 Function PromptAdmin {
 	$Title = "Choose Action";
-	$Message = "Do you want to pull computers from Active Directory or from a List?"
-	$AD = New-Object System.Management.Automation.Host.ChoiceDescription "&AD","Pull computer names from Active Directory.";
-	$File = New-Object System.Management.Automation.Host.ChoiceDescription "&File","Pull computer names from a txt file.";
-    $SinglePC = New-Object System.Management.Automation.Host.ChoiceDescription "&Single PC","Enter a single PC name.";
-	$Options = [System.Management.Automation.Host.ChoiceDescription[]]($AD,$File,$SinglePC);
+	$Message = "Select the action that best describes how you want want to input your information.  Enter ? for more information on the options."
+	$AD = New-Object System.Management.Automation.Host.ChoiceDescription "&AD","Pull computer names from Active Directory.  Must be ran on a computer with the Active Directory Module.";
+	$File = New-Object System.Management.Automation.Host.ChoiceDescription "&File","Pull computer names from a text file.";
+    $SinglePC = New-Object System.Management.Automation.Host.ChoiceDescription "&Single PC","Enter a single computer name.";
+	$Key = New-Object System.Management.Automation.Host.ChoiceDescription "Single &Key","Enter a single key to convert.  This is the encrypted serial number.";
+	$Options = [System.Management.Automation.Host.ChoiceDescription[]]($AD,$File,$SinglePC,$Key);
 	$script:Answer = $Host.UI.PromptForChoice($Title,$Message,$Options,0)
 }
 # ============================================================
@@ -87,6 +88,12 @@ ElseIf ($Answer -eq 2) {
     $list = $ComputerName
     Write-Host "Checking computer..."
 }
+ElseIf ($Answer -eq 3) {
+	$SingleKey = Read-Host "Enter the single key you want to convert"
+    $Serial = ConvertFrom-EncryptedAdobeKey ($SingleKey.Trim())
+	Write-Output "The serial number is:  $($Serial)"
+	Exit
+}
 
 ForEach ($entry in $list) {
     $Computer = $null
@@ -95,7 +102,7 @@ ForEach ($entry in $list) {
 	$Computer = $entry
 
 	# Check if computer is accessible, if not go to next computer in list.
-    Write-Host "Testing access to machine..."
+    Write-Host "Testing access to computer name $Computer..."
 	$Access = Test-Connection -ComputerName $Computer -Count 1
 	If ($Access -eq $null) {
 		"$Computer,Offline" | %{Write-Host $_; Out-File $OfflineLog -InputObject $_ -Append}
@@ -112,6 +119,7 @@ ForEach ($entry in $list) {
 		}
 		ElseIf ($OS.OSArchitecture -Match '32-bit') {
 			$ProgramFiles = "Program Files"
+			$64BitReg = ""
 		}
 
     	# Check to see what version of Acrobat is installed.
@@ -137,7 +145,8 @@ ForEach ($entry in $list) {
                 # Get-GPRegistryValue -ComputerName $Computer -Key "SOFTWARE$($64BitReg)\Adobe\Adobe Acrobat\$($VersionBranch).0\Registration" -ValueName Serial
                 # http://psremoteregistry.codeplex.com/
 
-                $Encrypted = Invoke-Command -ComputerName $Computer -ScriptBlock { param($64bit,$vBranch) Get-ChildItem -Path "HKLM:\SOFTWARE$($64Bit)\Adobe\Adobe Acrobat\$($VBranch).0\" | Get-ItemProperty | Select-Object -Property Serial } -ArgumentList $64BitReg,$VersionBranch
+				# For this to work, remote regisry administration must be enabled!
+				$Encrypted = Invoke-Command -ComputerName $Computer -ScriptBlock { param($64BitReg,$VersionBranch) Get-ChildItem -Path "HKLM:\SOFTWARE$($64BitReg)\Adobe\Adobe Acrobat\$($VersionBranch).0\" | ForEach-Object { Get-ItemProperty $_.PSPath } | Where-Object { $_.Serial } | ForEach-Object { $_.Serial } } -ArgumentList $64BitReg,$VersionBranch
                 $Convert = $Encrypted.Serial | Out-String
 
             }
@@ -163,5 +172,3 @@ ForEach ($entry in $list) {
 		}
 	}
 }
-
-# eos
