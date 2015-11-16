@@ -2,7 +2,7 @@
 
 Script Name:  Report_Acrobat.ps1
 By:  Zack Thompson / Created:  5/15/2015
-Version:  2.3 / Updated:  11/11/2015 / By:  ZT
+Version:  2.4 / Updated:  11/16/2015 / By:  ZT
 
 Description:  This script pulls the encrypted Acrobat product key from a 
     remote computer and then decrypts it.  It logs all information as is goes.
@@ -92,6 +92,8 @@ ElseIf ($Answer -eq 3) {
 	$SingleKey = Read-Host "Enter the single key you want to convert"
     $Serial = ConvertFrom-EncryptedAdobeKey ($SingleKey.Trim())
 	Write-Output "The serial number is:  $($Serial)"
+	Write-Output "Press any key to exit."
+	$Pause = $Host.UI.RawUI.ReadKey("NoEcho,IncludeKeyUp")
 	Exit
 }
 
@@ -99,6 +101,8 @@ ForEach ($entry in $list) {
     $Computer = $null
     $Version = $null
     $Serial = $null
+	$SerialNumber = $null
+	$ProductTitle = $null
 	$Computer = $entry
 
 	# Check if computer is accessible, if not go to next computer in list.
@@ -124,51 +128,61 @@ ForEach ($entry in $list) {
 
     	# Check to see what version of Acrobat is installed.
         Write-Host "Checking to see what version of Acrobat is installed..."
-		$GetAcrobatVersion = Get-ChildItem "\\$Computer\C$\$ProgramFiles\Adobe\Acrobat*" -Recurse | Where {$_.name -eq "Acrobat.exe"} | Select versioninfo
-	
+		$GetAcrobatVersions = Get-ChildItem "\\$Computer\C$\$ProgramFiles\Adobe\Acrobat*" -Recurse | Where {$_.name -eq "Acrobat.exe"} | Select versioninfo
+
 		# If Acrobat is found, check the version
-		If ($GetAcrobatVersion -ne $null) {
-			$Version = $GetAcrobatVersion.versioninfo.productversion
-            Write-Host "Found version $Version"
-            # Split the Main version number so we can attempt to find the serial
-            $VersionNumber = $Version -Split "\."
-            $VersionBranch = $VersionNumber[0]
+		If ($GetAcrobatVersions -ne $null) {
+		
+			ForEach ($AcrobatVersion in $GetAcrobatVersions) {
+				$Version = $AcrobatVersion.versioninfo.productversion
+				
+				Write-Host "Found version $Version"
+				# Split the Main version number so we can attempt to find the serial
+				$VersionNumber = $Version -Split "\."
+				$VersionBranch = $VersionNumber[0]
 
-            If ($VersionBranch -eq 9) {
-                # Pull the encrypted serial number from remote computer registry
+				If ($VersionBranch -eq 9) {
+					# Pull the encrypted serial number from remote computer registry
 
-                # Original line, but only works locally
-                # $Encrypted = Get-ChildItem -Path "HKLM:\SOFTWARE$($64BitReg)\Adobe\Adobe Acrobat\$($VersionBranch).0\Registration" | Get-ItemProperty | Select-Object -Property Serial
+					# Original line, but only works locally
+					# $Encrypted = Get-ChildItem -Path "HKLM:\SOFTWARE$($64BitReg)\Adobe\Adobe Acrobat\$($VersionBranch).0\Registration" | Get-ItemProperty | Select-Object -Property Serial
 
-                # This version uses a third party module, and would work, but trying to do this with built-in commands
-                # Import-Module PSRemoteRegistry
-                # Get-GPRegistryValue -ComputerName $Computer -Key "SOFTWARE$($64BitReg)\Adobe\Adobe Acrobat\$($VersionBranch).0\Registration" -ValueName Serial
-                # http://psremoteregistry.codeplex.com/
+					# This version uses a third party module, and would work, but trying to do this with built-in commands
+					# Import-Module PSRemoteRegistry
+					# Get-GPRegistryValue -ComputerName $Computer -Key "SOFTWARE$($64BitReg)\Adobe\Adobe Acrobat\$($VersionBranch).0\Registration" -ValueName Serial
+					# http://psremoteregistry.codeplex.com/
 
-				# For this to work, remote regisry administration must be enabled!
-				$Encrypted = Invoke-Command -ComputerName $Computer -ScriptBlock { param($64BitReg,$VersionBranch) Get-ChildItem -Path "HKLM:\SOFTWARE$($64BitReg)\Adobe\Adobe Acrobat\$($VersionBranch).0\" | ForEach-Object { Get-ItemProperty $_.PSPath } | Where-Object { $_.Serial } | ForEach-Object { $_.Serial } } -ArgumentList $64BitReg,$VersionBranch
-                $Convert = $Encrypted.Serial | Out-String
+					# For this to work, remote regisry administration must be enabled!
+					$Encrypted = Invoke-Command -ComputerName $Computer -ScriptBlock { param($64BitReg,$VersionBranch) Get-ChildItem -Path "HKLM:\SOFTWARE$($64BitReg)\Adobe\Adobe Acrobat\$($VersionBranch).0\" | ForEach-Object { Get-ItemProperty $_.PSPath } | Where-Object { $_.Serial } | ForEach-Object { $_.Serial } } -ArgumentList $64BitReg,$VersionBranch
+					$Convert = $Encrypted.Serial | Out-String
+					
+					# Set the product title (may change this later once I find a location to pull this from).
+					$ProductTitle = "Acrobat 9"
 
-            }
-            Else {
-                # Pull the encrypted serial number from remote computer XML file.
-                $XMLlocation = "\\$Computer\C$\ProgramData\regid.1986-12.com.adobe\"
-                $XMLFile = Get-ChildItem -Path $XMLlocation | ForEach-Object { $_.FullName }
-                [xml]$AdobeXML = Get-Content $XMLFile
-                $Convert = $AdobeXML.software_identification_tag.serial_number
-				$Title =  $AdobeXML.software_identification_tag.product_title
-            }
+				}
+				Else {
+					# Pull the encrypted serial number from remote computer XML file.
+					$XMLlocation = "\\$Computer\C$\ProgramData\regid.1986-12.com.adobe\"
+					$XMLFile = Get-ChildItem -Path $XMLlocation | ForEach-Object { $_.FullName }
+					[xml]$AdobeXML = Get-Content $XMLFile
+					$Convert = $AdobeXML.software_identification_tag.serial_number
+					$ProductTitle =  $AdobeXML.software_identification_tag.product_title
+				}
 
-            $Serial = ConvertFrom-EncryptedAdobeKey ($Convert.Trim())
-			$SerialNumber = Get-WmiObject win32_bios -ComputerName $Computer | ForEach-Object { $_.SerialNumber }
+				$Serial = ConvertFrom-EncryptedAdobeKey ($Convert.Trim())
+				$SerialNumber = Get-WmiObject win32_bios -ComputerName $Computer | ForEach-Object { $_.SerialNumber }
 
-            # Write to log file.
-    		"$Computer,$SerialNumber,$Title,$Version,$Serial" | %{Write-Host $_; Out-File $AcrobatLog -InputObject $_ -Append}
+				# Write to log file.
+				"$Computer,$SerialNumber,$ProductTitle,$Version,$Serial" | %{Write-Host $_; Out-File $AcrobatLog -InputObject $_ -Append}
+			}
 		}
 
     	# If Acrobat is not found, write to log file
-		ElseIf ($GetAcrobatVersion -eq $null) {
+		ElseIf ($GetAcrobatVersions -eq $null) {
     		"$Computer,Acrobat not installed" | %{Write-Host $_; Out-File $NoAcrobatLog -InputObject $_ -Append}
 		}
 	}
 }
+
+Write-Output "Script complete, press any key to exit."
+$Pause = $Host.UI.RawUI.ReadKey("NoEcho,IncludeKeyUp")
