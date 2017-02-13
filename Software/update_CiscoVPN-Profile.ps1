@@ -2,7 +2,7 @@
 
 Script Name:  update_CiscoVPN-Profile.ps1
 By:  Zack Thompson / Created:  1/4/2017
-Version:  1.1 / Updated:  1/4/2017 / By:  ZT
+Version:  1.2 / Updated:  1/14/2017 / By:  ZT
 
 Description:  This script modifies the content in the Cisco Preferences XML file.
 
@@ -66,9 +66,11 @@ Else {
 # Save the changes to the XML file.
 $CiscoXML.Save($XMLlocation)
 
-# Restart the Cisco VPN Client to pick up the changes from preferences.xml.
+# This part is optional -- if you leave it, it causes AnyConnect to open on the desktop at login -- this confuses users and has resulted in a couple tickets/questions.
+<# Restart the Cisco VPN Client to pick up the changes from preferences.xml.
 $CiscoPath = Get-Process -Name vpnui | Select-Object Path
 Get-Process -Name vpnui | % { $_.CloseMainWindow() }
 Start-Process $CiscoPath.Path -
+#>
 
 # eos
