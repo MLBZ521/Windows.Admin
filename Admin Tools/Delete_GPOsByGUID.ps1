@@ -7,7 +7,9 @@ Version:  1.1 | Updated:  10/19/2016 | By:  ZT
 Description:  This script deletes Group Policy Objects based on their 
     GUID and display information for each before deletation.
 
-Note:  
+Syntax:  To use this script, you would call it will the domain and file you want to use.
+
+Examples:  Delete_GPOsByGUID.ps1 -Domain my.domain.com -File GPO-GUIDS.txt
 
 #>
 
