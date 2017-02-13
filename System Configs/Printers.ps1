@@ -2,34 +2,55 @@
 
 Script Name:  Printers.ps1
 By:  Zack Thompson / Created:  8/10/2016
-Version:  1.2 / Updated:  8/22/2016 / By:  ZT
+Version:  2.0 / Updated:  2/8/2017 / By:  ZT
 
-Description:  This script installs (or uninstalls) printers from a print server.
+Description:  This script installs or uninstalls printers from asuprint1.
+    (This script was written so that it would work on Windows 7 systems that cannot utilize the
+     new Add-Printer cmdlets available in Windows 8+ machines.)
 
-Note:  This script *will* work on Windows 7 and prior OS.
+Syntax:  To use this script, you would call it will the action and printer(s) you want to install.
+
+Examples:
+
+    1)  Install/Uninstall a single printer:
+            Printers.ps1 -Action Install -Server myPrintServer -Printers GL_CPCOMSouth_HPLJ_Color_M451dn
+            Printers.ps1 -Action Uninstall -Server myPrintServer -Printers GL_CPCOMSouth_HPLJ_Color_M451dn
+
+    2)  Install/uninstall multiple printers that begin with a 'location' designator:
+            Printers.ps1 -Action Install -Server myPrintServer -Printers GL_CPCOMSouth_
+            Printers.ps1 -Action Uninstall -Server myPrintServer -Printers GL_CPCOMSouth_
 
 #>
 
 # ============================================================
-# Define Variables
+# Define Variablese
 # ============================================================
 
-$Location = "Name or Prefix of Printer"
-$PrintServer = "PrintServer"
+Param (
+    [Parameter(Mandatory=$True,Position=0)][string]$Action,
+    [Parameter(Mandatory=$True,Position=1)][string]$Server,
+    [Parameter(Mandatory=$True,Position=2)][string]$Printers
+)
 
 # ============================================================
 # Script Body
 # ============================================================
 
-$PrintersToInstall = @()
-$PrintersToInstall += (net view $PrintServer)
+$AvailablePrinters = @()
+$AvailablePrinters += (net view \\$($Server))
 
-# To uninstall printers, change the /ga switch to /gd
-ForEach ( $Printer in $PrintersToInstall ) {
-    If ( $Printer -match $Location ) {
+ForEach ( $Printer in $AvailablePrinters ) {
+    If ( $Printer -match $Printers ) {
         $PrintQueue = $Printer.Split('  ')[0]
-        Write-Host "Installing print queue:  \\$($PrintServer)\$($PrintQueue)"
-        rundll32 printui.dll,PrintUIEntry /ga /n "\\$($PrintServer)\$($PrintQueue)"
+
+        If ( $Action -eq "Install" ) {
+            Write-Host "Installing print queue:  \\$($Server)\$($PrintQueue)"
+            rundll32 printui.dll,PrintUIEntry /ga /n "\\$($Server)\$($PrintQueue)"
+        }
+        ElseIf ( $Action -eq "Uninstall" ) {
+            Write-Host "Uninstalling print queue:  \\$($Server)\$($PrintQueue)"
+            rundll32 printui.dll,PrintUIEntry /gd /n "\\$($Server)\$($PrintQueue)"
+        }
     }
 }
 
