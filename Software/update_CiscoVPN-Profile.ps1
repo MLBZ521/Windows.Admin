@@ -2,11 +2,11 @@
 
 Script Name:  update_CiscoVPN-Profile.ps1
 By:  Zack Thompson / Created:  1/4/2017
-Version:  1.0 / Updated:  1/4/2017 / By:  ZT
+Version:  1.1 / Updated:  1/4/2017 / By:  ZT
 
 Description:  This script modifies the content in the Cisco Preferences XML file.
 
-Note:  ( *This should be configured as a user startup script.* )
+Note:  ( *This should be configured as a user login script.* )
 
 #>
 
@@ -39,6 +39,11 @@ $Node.DefaultHostName = $DefaultHostName
 
 
 # Since these are nested elements and do not exist by default, they have to be assigned values differently.
+<#  Disabled the AutoConnectOnStart option since the Cisco VPN Service is set to Automatic by default.
+    This lead the following scenarios we decided to avoid:
+        - At login the VPN client launches and asking for credentials, even if the user doesn't need/use VPN for their job function.
+        - If we disable the Cisco VPN Service/client from launching at login, then users that need it (may) not be able to find it.
+
 If ( $Node.ControllablePreferences.AutoConnectOnStart -eq $null ) {
     $newNode_ACOS = $CiscoXML.CreateElement("AutoConnectOnStart")
     $newNode_ACOS.InnerXml = $AutoConnectOnStart
@@ -47,6 +52,7 @@ If ( $Node.ControllablePreferences.AutoConnectOnStart -eq $null ) {
 Else {
     $CiscoXML.SelectSingleNode("//AutoConnectOnStart").InnerXml = $AutoConnectOnStart
 }
+#>
 
 If ( $Node.ControllablePreferences.AutoUpdate -eq $null ) {
     $newNode_AU = $CiscoXML.CreateElement("AutoUpdate")
