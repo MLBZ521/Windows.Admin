@@ -1,8 +1,8 @@
-<#
+﻿<#
 
-Script Name:  Install_XMind.ps1
+Script Name:  install_XMind.ps1
 By:  Zack Thompson / Created:  9/18/2014
-Version:  2.1.5 / Updated:  6/29/2015 / By:  ZT
+Version:  2.2 / Updated:  4/28/2017 / By:  ZT
 
 Description:  This script installs XMind. (*This has to be a computer login script.*)
 
@@ -21,9 +21,10 @@ Write-Host
 # Check Processor Architecture (32bit vs 64bit).
 Function ProcArch {
 	$cpuArch="AMD64"
-		If ($ENV:Processor_Architecture -eq $cpuArch) {
-			$script:osArch="SysWow64"
-		}
+
+    If ($ENV:Processor_Architecture -eq $cpuArch) {
+		$script:osArch="SysWow64"
+	}
 	Else {
 		$script:osArch="System32"
 	}
@@ -50,23 +51,27 @@ Function CopyExecute {
 	Start-Process $SWinstaller -ArgumentList "/verysilent /norestart /loadinf=xmind_install-settings.inf" -Wait
 }
 # ============================================================
-# If 32bit, delete Bonjour installer files to prevent XMind
-# from asking end user to install on program launch, and make
-# changes to registry.
+# If 32bit, delete Bonjour installer files to prevent XMind from asking end
+# user to install on program launch, and make changes to registry.
 Function arch32Do {
 	Remove-Item "C:\Program Files\XMind\thirdparty\Bonjour.msi" -force
 	Remove-Item "C:\Program Files\XMind\thirdparty\Bonjour64.msi" -force
+
+    # I believe I did this so I could tell if *I* installed the software
+    # (via this script) on the users machine or if the user installed it themselves.
 	Set-Location -Path Registry::HKLM\SOFTWARE\Microsoft\Windows\CurrentVersion\Uninstall\XMind_is1
 	Set-ItemProperty . DisplayName $SWversion
 }
 # ============================================================
-# If 64bit, delete Bonjour installer files to prevent XMind
-# from asking end user to install on program launch, and make
-# changes to registry.
+# If 64bit, delete Bonjour installer files to prevent XMind from asking end
+# user to install on program launch, and make changes to registry.
 Function arch64Do {
 	Remove-Item "C:\Program Files (x86)\XMind\thirdparty\Bonjour.msi" -force
 	Remove-Item "C:\Program Files (x86)\XMind\thirdparty\Bonjour64.msi" -force
-	Set-Location -Path Registry::HKLM\SOFTWARE\Wow6432Node\Microsoft\Windows\CurrentVersion\Uninstall\XMind_is1
+
+	# I believe I did this so I could tell if *I* installed the software
+    # (via this script) on the users machine or if the user installed it themselves.
+    Set-Location -Path Registry::HKLM\SOFTWARE\Wow6432Node\Microsoft\Windows\CurrentVersion\Uninstall\XMind_is1
 	Set-ItemProperty . DisplayName $SWversion
 }
 # ============================================================
@@ -89,40 +94,48 @@ Function CreateLog {
 ProcArch
 
 # Define variables & locations
-$Org=""
+$Org="- Organization Name"  ### <-- Update this line to the name of your organization (optional) <-- ###
+$SWUpdate="xmind-windows-3.5.3.201506180105"  ### <-- Update this line to the installer file name (minus the .exe) <-- ###
+$SWversion="XMind 6 (v3.5.3.201506180105) $Org"  ### <-- Update this line to the latest version (used in above function) <-- ###
+
 $SWname="XMind"
-$SWUpdate="xmind-windows-3.5.3.201506180105"  ### <-- Update this line <-- ###
-$serverLocation="\\bbcfile\Installs\GPO Files\Software Installs\$SWname\$SWUpdate"
+$serverLocation="\\fileServer\Software Installers\$SWname\$SWUpdate"
 $IT_Staging="C:\Windows\$osArch\IT_Staging"
 $localLocation="$IT_Staging\$SWname"
-$SWversion="XMind 6 (v3.5.3.201506180105) - $Org"  ### <-- Update this line <-- ###
-$SWname=$SWUpdate + ".exe"
+$SWinstaller=$SWUpdate + ".exe"
 
 # Call DirCheck Function
 DirCheck
+
 # Call LogCheck Function
 LogCheck
 
 If ($noLog -eq "NotInstalled") {
-Write-Host "XMind or latest version is not installed on this PC"
+    Write-Host "XMind or latest version is not installed on this PC"
+
 	# Call CopyExecute Function
 	CopyExecute
-Write-Host "Installing XMind..."
-Write-Host "Removing files and updating registry after installation..."
-		If ($osArch -eq "System32") {
-			# Call arch32Do Function
-			arch32Do
-		}
-		Else {
-			# Call arch64Do Function
-			arch64Do
-		}
+
+    Write-Host "Installing XMind..."
+    Write-Host "Removing files and updating registry after installation..."
+
+	If ($osArch -eq "System32") {
+		# Call arch32Do Function
+		arch32Do
+	}
+	Else {
+		# Call arch64Do Function
+		arch64Do
+	}
+
 	# Call CreateLog Function
 	CreateLog
+
 	Write-Host "Created log file."
 }
 Else {
-Write-Host "Latest version of XMind is currently installed on this PC."
+    Write-Host "Latest version of XMind is currently installed on this PC."
 }
+
 Write-Host "Script completed successfully!"
 # eos
