@@ -24,7 +24,8 @@ $InventoryFile = "$($DriveLetter):\Inventory.csv"
 
 # ============================================================
 # Set variables
-$LocationNotes = Read-Host "Please enter the Location Notes of this equipment"
+$Location = Read-Host "Please enter the location for this equipment"
+$Desk = Read-Host "Please enter the desk number for this equipment"
 $ComputerPCN = Read-Host "Please enter the Computer's Proptery Control Number"
 
 $ComputerName = $ENV:ComputerName
@@ -56,11 +57,11 @@ Function Get-MonitorInfo {
 	}
 
 	ForEach ($Info in $MonitorInfo) {
-    Write-Output $Info.UserFriendlyName.Replace(" ",',')
-    Write-Output $Info.SerialNumberID
-    $MonitorPCN = Read-Host "Please enter the Monitor's Proptery Control Number"
-    "$FirstName,$LastName,$User,Monitor,Tempe,$LocationNotes,$($Info.UserFriendlyName.Replace(" ",',')),$($Info.SerialNumberID),$MonitorPCN"  | Out-File $InventoryFile -Append
-    }
+	Write-Output $Info.UserFriendlyName.Replace(" ",',')
+	Write-Output $Info.SerialNumberID
+	$MonitorPCN = Read-Host "Please enter the Monitor's Proptery Control Number"
+	"$FirstName,$LastName,$User,Monitor,$Location,$Desk,$($Info.UserFriendlyName.Replace(" ",',')),$($Info.SerialNumberID),$MonitorPCN"  | Out-File $InventoryFile -Append
+	}
 }
 
 # ============================================================
@@ -76,7 +77,7 @@ Write-Output "RAM is:  $($SystemRAM.'Total Physical Ram')GB"
 
 # ============================================================
 # Save information to the defined csv file above.
-"$FirstName,$LastName,$User,Computer,Tempe,$LocationNotes,$($SystemInfo.Manufacturer),$($SystemInfo.Model),$($ServiceTag.SerialNumber),$ComputerPCN,,,$($SystemRAM.'Total Physical Ram')GB,$($ProcessorModel.Name),$ComputerName" | Out-File $InventoryFile -Append
+"$FirstName,$LastName,$User,Computer,$Location,$Desk,$($SystemInfo.Manufacturer),$($SystemInfo.Model),$($ServiceTag.SerialNumber),$ComputerPCN,,,$($SystemRAM.'Total Physical Ram')GB,$($ProcessorModel.Name),$ComputerName" | Out-File $InventoryFile -Append
 
 # Call Get-MonitorInfo Function
 Get-MonitorInfo

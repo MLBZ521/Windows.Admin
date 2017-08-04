@@ -4,11 +4,11 @@ Script Name:  report_InactiveComputers.ps1
 By:  Zack Thompson / Created:  11/15/2016
 Version:  1.7 / Updated:  12/8/2016 / By:  ZT
 
-Description:  This script finds inactive computer accounts in AD and pulls realavent information.
-    This inforamtion can then be displayed to screen, exported to a csv, or the accounts can be disabled.
+Description:  This script finds inactive computer accounts in AD and pulls relevant information.
+    This information can then be displayed to screen, exported to a csv, or the accounts can be disabled.
 
 Notes:
-*BitLocker Key retrival process borrowed from:  https://ndswanson.wordpress.com/2014/10/20/get-bitlocker-recovery-from-active-directory-with-powershell/
+*BitLocker Key retrieval process borrowed from:  https://ndswanson.wordpress.com/2014/10/20/get-bitlocker-recovery-from-active-directory-with-powershell/
 
 #>
 
@@ -28,7 +28,7 @@ $TimeSpan = Read-Host "Enter the TimeSpan to search"
 # Function to prompt user for a choice.
 Function Action {
 	$Title = "Choose Action";
-	$Message = "Select option to peform.  Enter ? for more information on the options."
+	$Message = "Select option to perform.  Enter ? for more information on the options."
 	$Display = New-Object System.Management.Automation.Host.ChoiceDescription "&Display","This option will display all information to the screen.";
 	$Export = New-Object System.Management.Automation.Host.ChoiceDescription "&Export","This option will export all information to a CSV file.";
     $Disable = New-Object System.Management.Automation.Host.ChoiceDescription "D&isable","This option will disable the inactive computer objects.";
@@ -94,7 +94,7 @@ Function DisableComputers {
 
 Do {
 
-    # Funtion Action
+    # Function Action
     Action
     
     $ExportArray = @()
