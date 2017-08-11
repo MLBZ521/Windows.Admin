@@ -1,6 +1,6 @@
 <#
 
-Script Name:  Report_Acrobat.ps1
+Script Name:  report_AcrobatLicenseKey.ps1
 By:  Zack Thompson / Created:  5/15/2015
 Version:  2.4 / Updated:  11/16/2015 / By:  ZT
 

@@ -4,9 +4,9 @@ By:  Zack Thompson / Created:  2/3/2015
 Version:  1.0 / Updated:  2/27/2015 / By:  ZT
 
 Description:  This script will move the specified users data from one PC
-	to another PC.  The specificed folders will be moved, if more folders
+	to another PC.  The specified folders will be moved, if more folders
 	are needed for your environment, they can be added in the $Profile 
-	variable.
+	array.
 	
 #>
 
