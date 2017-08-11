@@ -14,7 +14,7 @@ Note:  ( *This should be configured as a user login script.* )
 # Define Variables
 # ============================================================
 $DefaultUser = $env:username
-$DefaultHostName =  "sslvpn.asu.edu"
+$DefaultHostName =  "sslvpn.my.org"
 # $AutoConnectOnStart = "true"
 $AutoUpdate = "true"
 $XMLlocation = "C:\Users\$env:username\AppData\Local\Cisco\Cisco AnyConnect Secure Mobility Client\preferences.xml"
