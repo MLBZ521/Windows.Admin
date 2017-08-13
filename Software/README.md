@@ -4,6 +4,11 @@ Windows Software Scripts
 In this repository are various scripts that I have written to maintain Windows Software.  Most are written for use in a GPO.
 
 
+#### config_FirefoxPermissions.ps1 ####
+
+Description:  This script uses sqlite3.exe (CLI utility) to check and add exceptions or permissions to allow a specified website to run Java and Flash plug-ins.
+
+
 #### install_DellBIOSConfig.ps1 ####
 
 Description:  This script installs a customized BIOS Configuration file for Dell Systems.
@@ -24,6 +29,11 @@ Description:  This script checks the model of the computer, checks driver versio
 Description:  This script installs .msu update files that are saved to a network share.  It checks the OS Version to see if it matches one that updates	are provided for, if so, it will install them if they are not already installed.
 
 * Borrowed and modified from:  http://randygray.com/powershell-install-multiple-windows-updates-msu/
+
+
+#### Managing the Java JRE ####
+
+Description:  These configuration files are for managing the Java Runtime Environment on client systems.  I used these files and scripts to whitelist websites and Java applets.
 
 
 #### uninstall_Quicktime.ps1 ####
