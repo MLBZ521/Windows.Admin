@@ -1,11 +1,11 @@
 <#
-Script Name:  install_FirefoxPermissions.ps1
+Script Name:  config_FirefoxPermissions.ps1
 By:  Zack Thompson / Created:  3/3/2015
 Version:  1.2 / Updated:  3/4/2015 / By:  ZT
 
 Description:  This script uses sqlite3.exe (CLI utility) to check and add
     exceptions or permissions to allow a specified website to run Java 
-    and Flash plugins.
+    and Flash plug-ins.
 	(*This has to be applied as a USER script.*)
 	
 	***If any more permissions are ever needed to be added, this check 
@@ -17,7 +17,7 @@ Write-Host "***********************************************************"
 Write-Host "**                                                       **"
 Write-Host "**                DO NOT CLOSE THIS WINDOW               **"
 Write-Host "**                                                       **"
-Write-Host "**           Adding Plugin Permissions to Firefox        **"
+Write-Host "**           Adding Plug in Permissions to Firefox       **"
 Write-Host "**                                                       **"
 Write-Host "**  This window will automatically close once complete.  **"
 Write-Host "**                                                       **"
@@ -40,11 +40,11 @@ Else {
 
 # Get currently logged on user.
 	$user = $env:username
-# Define location to the new destination for PST Files.
+# Define location to the Firefox Profile path.
 	$FirefoxPath = "C:\Users\" + $user + "\AppData\Roaming\Mozilla\Firefox\Profiles\"
 # Get the logged on users Firefox Profile; ErrorAction Stop script if profile doesn't exist.
 	$FirefoxProfile = Get-ChildItem -Path $FirefoxPath -ErrorAction Stop | Select Name
-# Set the local of the permissions.sqlite file.
+# Set the location of the permissions.sqlite file.
 	$PermFile = $FirefoxPath + $FirefoxProfile.Name + "\permissions.sqlite"
 # Locations for Staging Folder and the sqlite3 CLI application
 	$IT_Staging = "C:\Windows\$osArch\IT_Staging\"
