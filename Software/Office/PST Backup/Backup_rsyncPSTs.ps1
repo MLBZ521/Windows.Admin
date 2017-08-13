@@ -1,14 +1,14 @@
 <#
 
-Script Name:  Backup_rsyncPSTs.ps1
+Script Name:  backup_rsyncPSTs.ps1
 By:  Zack Thompson / Created:  1/2/2015
-Version:  1.3 / Updated:  2/23/2015 / By:  ZT
+Version:  1.4 / Updated:  8/1/2017 / By:  ZT
 
 Description:  This script uses rsync to incrementally backup local PST 
 	files. Backup destination is the specified in a variable with exact 
 	location configured on the server.
 	
-	(*This should be run as a logoff script in the user evironment.*)
+Note:  (* This should be run as a logoff script in the user environment. *)
 	
 #>
 
@@ -45,6 +45,15 @@ $LocalPSTLoc = "/cygdrive/c/Users/$user/AppData/Local/Microsoft/Outlook/PST_File
 $logfile = "C:\Users\$user\AppData\Local\Microsoft\Outlook\PST_Files\Log_rsyncPST.txt"
 $PSTLocation = "C:\Users\$user\AppData\Local\Microsoft\Outlook\PST_Files\"
 
+# Define the 'backup' server location (IP)
+$backupServerIP = "192.168.0.1"
+
+# Define variables for emailed logs
+$FromAddress = "PSTBackups@my.company.com"
+$ToAddress = "Helpdesk@my.company.com"
+$MessageSubject = "PST Backup Error"
+$SendingServer = "mailserver"  ###  Server Name or IP Address should work.  ###
+
 # ============================================================
 # Script Body
 # ============================================================
@@ -63,7 +72,7 @@ Write-Output "Script started on:  $(Get-Date -UFormat "%m-%d-%Y @ %r")" | Out-Fi
 # Setup the process startup info
 $processRsync = New-Object System.Diagnostics.ProcessStartInfo
 $processRsync.FileName = "$Rsync"
-$processRsync.Arguments = "-r --numeric-ids --delete-after --stats `"$LocalPSTLoc`" 172.16.100.60::Backup_Destination/`"$user`""
+$processRsync.Arguments = "-r --numeric-ids --delete-after --stats `"$LocalPSTLoc`" `"$backupServerIP`"::Backup_Destination/`"$user`""
 $processRsync.UseShellExecute = $false
 $processRsync.CreateNoWindow = $true
 $processRsync.RedirectStandardOutput = $true
@@ -106,10 +115,6 @@ If ($stderr.length -ne 0) {
 	# If Stderr is not empty, then an error occurred, so email information to the Helpdesk.
     $Return=[char]0x000A
 	$MessageBody = "Backup ran on:  $(Get-Date -UFormat "%m-%d-%Y @ %r") $($Return) $($Return) For User:  $($user) $($Return) On Computer:  $computer $($Return) $($Return) $($stderr)"
-	$FromAddress = "PSTBackups@IT.org"
-	$ToAddress = "Helpdesk@IT.org"
-	$MessageSubject = "PST Backup Error"
-	$SendingServer = "bbcmailbox"
 	$SMTPMessage = New-Object System.Net.Mail.MailMessage $FromAddress, $ToAddress, $MessageSubject, $MessageBody
 	$SMTPClient = New-Object System.Net.Mail.SMTPClient $SendingServer
 	$SMTPClient.Send($SMTPMessage)
