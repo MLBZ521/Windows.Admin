@@ -2,7 +2,7 @@
 
 Script Name:  Install-BomgarJumpClient.ps1
 By:  Zack Thompson / Created:  4/28/2020
-Version:  1.0.1 / Updated:  5/13/2020 / By:  ZT
+Version:  1.1.0 / Updated:  6/18/2020 / By:  ZT
 
 Description:  Installs a Bomgar Jump Client with the passed parameters
 
@@ -17,6 +17,7 @@ param (
     [Parameter(Mandatory=$true, HelpMessage = "Sets the Jump Client Key.")][string]$Key,
     [Parameter(Mandatory=$true, HelpMessage = "Sets the Jump Client Group.  You must pass the Jump Group `"code_name`".")][string]$Group,
     [Parameter(Mandatory=$false, HelpMessage = "Sets the Jump Client Tag.")][string]$Tag,
+    [Parameter(Mandatory=$false, HelpMessage = "Sets the Jump Client Name.  default value:  <DisplayName> (<Username>)")][string]$Name,
     [Parameter(Mandatory=$false, HelpMessage = "Sets the Jump Client Comments.  default value:  <Manufacture>, <Model>, <Serial Number>")][string]$Comments,
     [Parameter(Mandatory=$false, HelpMessage = "Associates the Jump Client with the public portal which has the given hostname as a site address.  default value:  bomgar.company.org")][string]$Site = "bomgar.company.org",
     [Parameter(Mandatory=$false, HelpMessage = "Policy that controls the permission policy during a support session if the customer is present at the console.  You must pass the Policy's `"code_name`"")][string]$PolicyPresent,
@@ -75,6 +76,7 @@ function Install {
     $Key = $BomgarRegistryParameters | Select-Object -ExpandProperty JumpKey -ErrorAction SilentlyContinue
     $Group = $BomgarRegistryParameters | Select-Object -ExpandProperty JumpGroup -ErrorAction SilentlyContinue
     $Tag = $BomgarRegistryParameters | Select-Object -ExpandProperty JumpTag -ErrorAction SilentlyContinue
+    $Name = $BomgarRegistryParameters | Select-Object -ExpandProperty JumpName -ErrorAction SilentlyContinue
     $Comments = $BomgarRegistryParameters | Select-Object -ExpandProperty JumpComments -ErrorAction SilentlyContinue
     $Site = $BomgarRegistryParameters | Select-Object -ExpandProperty JumpSite -ErrorAction SilentlyContinue
     $PolicyPresent = $BomgarRegistryParameters | Select-Object -ExpandProperty JumpPolicyPresent -ErrorAction SilentlyContinue
@@ -107,6 +109,19 @@ function Install {
     }
     else {
         $JumpTag = ""
+    }
+
+    # Set the Jump Client Name
+    if ( $Name -eq $null ) {
+
+        $ConsoleUser = $env:USERNAME
+        Add-Type -AssemblyName System.DirectoryServices.AccountManagement
+        $DisplayName = [System.DirectoryServices.AccountManagement.UserPrincipal]::Current.DisplayName
+        $JumpName = "jc_name=`"${DisplayName} (${ConsoleUser})`""
+
+    }
+    else {
+        $JumpName = "jc_name=`"${Name}`""
     }
 
     # Set the Jump Client Comments
@@ -146,7 +161,7 @@ function Install {
     }
 
     # Combine the Parameters into an array
-    $Parameters = $JumpKey, $JumpGroup, $JumpSite, $JumpPolicyNotPresent, $JumpTag, $JumpComments, $JumpPolicyPresent
+    $Parameters = $JumpKey, $JumpGroup, $JumpSite, $JumpPolicyNotPresent, $JumpTag, $JumpName, $JumpComments, $JumpPolicyPresent
 
     # Combine the Parameters into a string
     $InstallParameters = ( $Parameters ).Where( { $_ } ) -join " "
