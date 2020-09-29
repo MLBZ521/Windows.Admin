@@ -1,4 +1,4 @@
-Windows Desktop Scripts
+System Configs
 ======
 
 In this repository are various scripts that I have written to configure the Windows Desktop OS.  Most are written for use in a GPO.
