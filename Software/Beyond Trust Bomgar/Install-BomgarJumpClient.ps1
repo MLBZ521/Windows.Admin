@@ -2,7 +2,7 @@
 
 Script Name:  Install-BomgarJumpClient.ps1
 By:  Zack Thompson / Created:  4/28/2020
-Version:  1.1.0 / Updated:  6/18/2020 / By:  ZT
+Version:  1.2.0 / Updated:  10/20/2020 / By:  ZT
 
 Description:  Installs a Bomgar Jump Client with the passed parameters
 
@@ -117,7 +117,17 @@ function Install {
         $ConsoleUser = $env:USERNAME
         Add-Type -AssemblyName System.DirectoryServices.AccountManagement
         $DisplayName = [System.DirectoryServices.AccountManagement.UserPrincipal]::Current.DisplayName
-        $JumpName = "jc_name=`"${DisplayName} (${ConsoleUser})`""
+
+        if ( $ConsoleUser -eq "(${env:computername}$)" ){
+
+            $JumpName = ""
+
+        }
+        else {
+
+            $JumpName = "jc_name=`"${DisplayName} (${ConsoleUser})`""
+
+        }
 
     }
     else {
@@ -141,7 +151,8 @@ function Install {
         $JumpSite = "jc_public_site_address=`"${Site}`""
     }
     else {
-        $JumpSite = "jc_public_site_address=`"bomgar.company.org`""
+        # $JumpSite = "jc_public_site_address=`"bomgar.company.org`""
+        $JumpSite = ""
     }
 
     # Set the Jump Client Console User Present Policy
@@ -152,12 +163,13 @@ function Install {
         $JumpPolicyPresent = ""
     }
 
-    Set the Jump Client Console User Not Present Policy
+    # Set the Jump Client Console User Not Present Policy
     if ( $PolicyNotPresent -ne $null ) {
         $JumpPolicyNotPresent = "jc_session_policy_not_present=`"${PolicyNotPresent}`""
     }
     else {
-        $JumpPolicyNotPresent = "jc_session_policy_not_present=`"policy-unattended-jump`""
+        # $JumpPolicyNotPresent = "jc_session_policy_not_present=`"policy-unattended-jump`""
+        $JumpPolicyNotPresent = ""
     }
 
     # Combine the Parameters into an array
