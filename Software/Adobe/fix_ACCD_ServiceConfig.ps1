@@ -2,7 +2,7 @@
 
 Script Name:  fix_ACCD_ServiceConfig.ps1
 By:  Zack Thompson / Created:  5/2/2019
-Version:  1.0.0 / Updated:  5/2/2019 / By:  ZT
+Version:  1.1.0 / Updated:  10/26/2021 / By:  ZT
 
 Description:  This script writes the desired values to the Adobe ServiceConfig.xml file to resolve common issues with the ACCD.
 
@@ -12,7 +12,8 @@ Description:  This script writes the desired values to the Adobe ServiceConfig.x
 # Define Variables
 # ============================================================
 
-$path_ServiceConfig = "%ProgramFiles(x86)%\Common Files\Adobe\OOBE\Configs"
+$program_files_path = [System.Environment]::ExpandEnvironmentVariables("%ProgramFiles(x86)%")
+$path_ServiceConfig = "${program_files_path}\Common Files\Adobe\OOBE\Configs"
 $ServiceConfig = "${path_ServiceConfig}\ServiceConfig.xml"
 $change_made = 0
 
@@ -22,10 +23,8 @@ $change_made = 0
 
 function AddXMLElement($xml, $Parent, $Child) {
     # Creation of a node and its text
-    # Write-Host "Here 1"
     $xmlElt = $xml.CreateElement("${Child}")
     # Add the node to the document
-    # Write-Host "Here 2"
     $xml.SelectSingleNode("//${Parent}").AppendChild($xmlElt) | Out-Null
     # return $xml
 }
@@ -98,9 +97,20 @@ if ( Test-Path -Path $ServiceConfig ) {
 else {
     Write-Host "Config file does not exist."
 
-    if ( !( Test-Path -Path $path_ServiceConfig ) ) {
-        Write-Host "Creating directory structure..."
-        New-Item -Path "${path_ServiceConfig}" -ItemType Directory | Out-Null
+    try {
+
+        if ( !( Test-Path -Path $path_ServiceConfig ) ) {
+            Write-Host "Creating directory structure..."
+            New-Item -Path "${path_ServiceConfig}" -ItemType Directory -ErrorAction Stop | Out-Null
+        }
+
+    }
+    catch {
+
+        Write-Warning "Failed to create the required directory!"
+        Write-Warning "Likely a permissions issue."
+        Write-Error -Message $_.Exception.Message -ErrorAction Stop
+
     }
 
     # Create an XML Object
@@ -120,6 +130,16 @@ else {
     AddXMLText $xml_Contents "feature" "enabled" $true
 
     Write-Host "Saving configuration to disk..."
-    $xml_Contents.Save($ServiceConfig)
-    Write-Host "Result:  Updates made."
+    try {
+
+        $xml_Contents.Save($ServiceConfig)
+        Write-Host "Result:  Updates made."
+        
+    }
+    catch {
+
+        Write-Warning "Failed to save the `ServiceConfig.xml` file!"
+        Write-Error -Message $_.Exception.Message -ErrorAction Stop
+
+    }
 }
