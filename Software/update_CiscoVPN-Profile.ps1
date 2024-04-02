@@ -1,12 +1,14 @@
-﻿<#
+<#
 
 Script Name:  update_CiscoVPN-Profile.ps1
 By:  Zack Thompson / Created:  1/4/2017
-Version:  1.2 / Updated:  1/14/2017 / By:  ZT
+Version:  1.2.1 / Updated:  4/11/2017 / By:  ZT
 
 Description:  This script modifies the content in the Cisco Preferences XML file.
 
-Note:  ( *This should be configured as a user login script.* )
+Note:  The change made in the script are not picked up until after the Cisco Client is restarted (if the Cisco service is enabled) as the service starts before the script is run.
+
+Usage:  *This should be configured as a user login script.*
 
 #>
 
@@ -17,7 +19,7 @@ $DefaultUser = $env:username
 $DefaultHostName =  "sslvpn.my.org"
 # $AutoConnectOnStart = "true"
 $AutoUpdate = "true"
-$XMLlocation = "C:\Users\$env:username\AppData\Local\Cisco\Cisco AnyConnect Secure Mobility Client\preferences.xml"
+$XMLlocation = "C:\Users\${DefaultUser}\AppData\Local\Cisco\Cisco AnyConnect Secure Mobility Client\preferences.xml"
 
 
 # ============================================================
@@ -40,8 +42,8 @@ $Node.DefaultHostName = $DefaultHostName
 
 # Since these are nested elements and do not exist by default, they have to be assigned values differently.
 <#  Disabled the AutoConnectOnStart option since the Cisco VPN Service is set to Automatic by default.
-    This lead the following scenarios we decided to avoid:
-        - At login the VPN client launches and asking for credentials, even if the user doesn't need/use VPN for their job function.
+    This lead to the following scenarios I decided to avoid:
+        - At login the VPN client launches, asking for credentials, even if the user doesn't need/use VPN for their job function.
         - If we disable the Cisco VPN Service/client from launching at login, then users that need it (may) not be able to find it.
 
 If ( $Node.ControllablePreferences.AutoConnectOnStart -eq $null ) {
