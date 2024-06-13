@@ -2,7 +2,7 @@
 
 Script Name:  Install-BomgarJumpClient.ps1
 By:  Zack Thompson / Created:  4/28/2020
-Version:  1.2.0 / Updated:  10/20/2020 / By:  ZT
+Version:  1.3.0 / Updated:  6/12/2024 / By:  ZT
 
 Description:  Installs a Bomgar Jump Client with the passed parameters
 
@@ -32,21 +32,25 @@ function Get-MSIInfo {
         [System.IO.FileInfo]$Path,
         [parameter(Mandatory = $true)]
         [ValidateNotNullOrEmpty()]
-        [ValidateSet("ProductCode", "ProductVersion", "ProductName", "Manufacturer", "ProductLanguage", "FullVersion", "InstallPrerequisites")]
+        [ValidateSet("ProductCode", "ProductVersion", "ProductName", "Manufacturer",
+            "ProductLanguage", "FullVersion", "InstallPrerequisites")]
         [string]$Property
     )
     Process {
         try {
             # Read property from MSI database
             $WindowsInstaller = New-Object -ComObject WindowsInstaller.Installer
-            $MSIDatabase = $WindowsInstaller.GetType().InvokeMember("OpenDatabase", "InvokeMethod", $null, $WindowsInstaller, @($Path.FullName, 0))
+            $MSIDatabase = $WindowsInstaller.GetType().InvokeMember(
+                "OpenDatabase", "InvokeMethod", $null, $WindowsInstaller, @($Path.FullName, 0))
             $Query = "SELECT Value FROM Property WHERE Property = '$($Property)'"
-            $View = $MSIDatabase.GetType().InvokeMember("OpenView", "InvokeMethod", $null, $MSIDatabase, ($Query))
+            $View = $MSIDatabase.GetType().InvokeMember(
+                "OpenView", "InvokeMethod", $null, $MSIDatabase, ($Query))
             $View.GetType().InvokeMember("Execute", "InvokeMethod", $null, $View, $null)
             $Record = $View.GetType().InvokeMember("Fetch", "InvokeMethod", $null, $View, $null)
             $Value = $Record.GetType().InvokeMember("StringData", "GetProperty", $null, $Record, 1)
             # Commit database and close view
-            $MSIDatabase.GetType().InvokeMember("Commit", "InvokeMethod", $null, $MSIDatabase, $null)
+            $MSIDatabase.GetType().InvokeMember(
+                "Commit", "InvokeMethod", $null, $MSIDatabase, $null)
             $View.GetType().InvokeMember("Close", "InvokeMethod", $null, $View, $null)
             $MSIDatabase = $null
             $View = $null
@@ -69,42 +73,46 @@ function Install {
     # ============================================================
     # Read in Registry parameters
     # ============================================================
-
     $RegistryPath = "HKLM:\SOFTWARE\Company\Bomgar"
     $BomgarRegistryParameters = Get-ItemProperty -Path $RegistryPath
-
-    $Key = $BomgarRegistryParameters | Select-Object -ExpandProperty JumpKey -ErrorAction SilentlyContinue
-    $Group = $BomgarRegistryParameters | Select-Object -ExpandProperty JumpGroup -ErrorAction SilentlyContinue
-    $Tag = $BomgarRegistryParameters | Select-Object -ExpandProperty JumpTag -ErrorAction SilentlyContinue
-    $Name = $BomgarRegistryParameters | Select-Object -ExpandProperty JumpName -ErrorAction SilentlyContinue
-    $Comments = $BomgarRegistryParameters | Select-Object -ExpandProperty JumpComments -ErrorAction SilentlyContinue
-    $Site = $BomgarRegistryParameters | Select-Object -ExpandProperty JumpSite -ErrorAction SilentlyContinue
-    $PolicyPresent = $BomgarRegistryParameters | Select-Object -ExpandProperty JumpPolicyPresent -ErrorAction SilentlyContinue
-    $PolicyNotPresent = $BomgarRegistryParameters | Select-Object -ExpandProperty JumpPolicyNotPresent -ErrorAction SilentlyContinue
+    $Key = $BomgarRegistryParameters | `
+        Select-Object -ExpandProperty JumpKey -ErrorAction SilentlyContinue
+    $Group = $BomgarRegistryParameters | `
+        Select-Object -ExpandProperty JumpGroup -ErrorAction SilentlyContinue
+    $Tag = $BomgarRegistryParameters | `
+        Select-Object -ExpandProperty JumpTag -ErrorAction SilentlyContinue
+    $Name = $BomgarRegistryParameters | `
+        Select-Object -ExpandProperty JumpName -ErrorAction SilentlyContinue
+    $Comments = $BomgarRegistryParameters | `
+        Select-Object -ExpandProperty JumpComments -ErrorAction SilentlyContinue
+    $Site = $BomgarRegistryParameters | `
+        Select-Object -ExpandProperty JumpSite -ErrorAction SilentlyContinue
+    $PolicyPresent = $BomgarRegistryParameters | `
+        Select-Object -ExpandProperty JumpPolicyPresent -ErrorAction SilentlyContinue
+    $PolicyNotPresent = $BomgarRegistryParameters | `
+        Select-Object -ExpandProperty JumpPolicyNotPresent -ErrorAction SilentlyContinue
 
     # ============================================================
     # Build install parameters
     # ============================================================
-
     # Set the Jump Client Key
-    if ( $Key -ne $null ) {
-        $JumpKey = "KEY_INFO=`"${Key}`""
+    if ( $null -ne $Key ) {
+        $JumpKey = "KEY_INFO=${Key}"
     }
     else {
-        Write-Error "ERROR:  A Jump Key was not provided." -ErrorAction Stop
+        Write-Error "A Jump Key was not provided." -ErrorAction Stop
     }
 
     # Set the Jump Client Group
-    if ( $Group -ne $null ) {
+    if ( $null -ne $Group ) {
         $JumpGroup = "jc_jump_group=`"jumpgroup:${Group}`""
     }
     else {
         $JumpGroup = ""
-        # Write-Error "ERROR:  A Jump Group was not provided." -ErrorAction Stop
     }
 
     # Set the Jump Client Tag
-    if ( $Tag -ne $null ) {
+    if ( $null -ne $Tag ) {
         $JumpTag = "jc_tag=`"${Tag}`""
     }
     else {
@@ -112,21 +120,18 @@ function Install {
     }
 
     # Set the Jump Client Name
-    if ( $Name -eq $null ) {
+    if (( $null -eq $Name ) -or ( $Name -eq "<Full Name> (<Username>)" )) {
 
         $ConsoleUser = $env:USERNAME
         Add-Type -AssemblyName System.DirectoryServices.AccountManagement
-        $DisplayName = [System.DirectoryServices.AccountManagement.UserPrincipal]::Current.DisplayName
+        $DisplayName = [
+            System.DirectoryServices.AccountManagement.UserPrincipal]::Current.DisplayName
 
         if ( $ConsoleUser -eq "(${env:computername}$)" ){
-
             $JumpName = ""
-
         }
         else {
-
             $JumpName = "jc_name=`"${DisplayName} (${ConsoleUser})`""
-
         }
 
     }
@@ -135,28 +140,27 @@ function Install {
     }
 
     # Set the Jump Client Comments
-    if ( $Comments -eq $null ) {
-
-        $ComputerSystem = Get-CimInstance -ClassName Win32_ComputerSystem | Select-Object Model, Manufacturer
-        $SerialNumber = Get-CimInstance -ClassName Win32_BIOS | Select-Object -ExpandProperty SerialNumber
+    if ( $null -eq $Comments ) {
+        $ComputerSystem = Get-CimInstance -ClassName Win32_ComputerSystem | `
+            Select-Object Model, Manufacturer
+        $SerialNumber = Get-CimInstance -ClassName Win32_BIOS | `
+            Select-Object -ExpandProperty SerialNumber
         $JumpComments = "jc_comments=`"$( ${ComputerSystem}.Manufacturer ), $( ${ComputerSystem}.Model ), ${SerialNumber}`""
-
     }
     else {
         $JumpComments = "jc_comments=`"${Comments}`""
     }
 
     # Set the Jump Client Site
-    if ( $Site -ne $null ) {
+    if ( $null -ne $Site ) {
         $JumpSite = "jc_public_site_address=`"${Site}`""
     }
     else {
-        # $JumpSite = "jc_public_site_address=`"bomgar.company.org`""
         $JumpSite = ""
     }
 
     # Set the Jump Client Console User Present Policy
-    if ( $PolicyPresent -ne $null ) {
+    if ( $null -ne $PolicyPresent ) {
         $JumpPolicyPresent = "jc_session_policy_present=`"${PolicyPresent}`""
     }
     else {
@@ -164,16 +168,16 @@ function Install {
     }
 
     # Set the Jump Client Console User Not Present Policy
-    if ( $PolicyNotPresent -ne $null ) {
+    if ( $null -ne $PolicyNotPresent ) {
         $JumpPolicyNotPresent = "jc_session_policy_not_present=`"${PolicyNotPresent}`""
     }
     else {
-        # $JumpPolicyNotPresent = "jc_session_policy_not_present=`"policy-unattended-jump`""
         $JumpPolicyNotPresent = ""
     }
 
     # Combine the Parameters into an array
-    $Parameters = $JumpKey, $JumpGroup, $JumpSite, $JumpPolicyNotPresent, $JumpTag, $JumpName, $JumpComments, $JumpPolicyPresent
+    $Parameters = $JumpKey, $JumpGroup, $JumpSite, $JumpPolicyNotPresent,
+        $JumpTag, $JumpName, $JumpComments, $JumpPolicyPresent
 
     # Combine the Parameters into a string
     $InstallParameters = ( $Parameters ).Where( { $_ } ) -join " "
@@ -183,30 +187,33 @@ function Install {
     # ============================================================
 
     # Perform install
-    $InstallProcess = Start-Process msiexec -ArgumentList "/i ${PSScriptRoot}\${MSI} ${InstallParameters} /quiet" -PassThru -Wait
+    $InstallProcess = Start-Process msiexec -ArgumentList `
+        "/i ""${PSScriptRoot}\${MSI}"" ${InstallParameters} /quiet" -PassThru -Wait
 
     # Check the exit code
     if ( $InstallProcess.ExitCode -eq 0 ) {
 
-        # Check if the install completed in less than five seconds; there's an issue that after an uninstall, it doesn't
-        # successfully re-install the first time, but still exits with an exit code of 0.
-        if ( $( $InstallProcess.ExitTime - $InstallProcess.StartTime ) -lt $( New-TimeSpan -Seconds 5 ) -and $InstallAttempt -eq 0 ) {
-
+        # Check if the install completed in less than five seconds.
+        # There's an issue that after an uninstall, it doesn't successfully
+        # re-install the first time, but still exits with an exit code of 0.
+        if (
+            $( $InstallProcess.ExitTime - $InstallProcess.StartTime ) -lt `
+            $( New-TimeSpan -Seconds 5 ) -and $InstallAttempt -eq 0
+        ) {
             $InstallAttempt = $InstallAttempt + 1
-
             # Run the install function again
             Install
-
         }
 
+        # Only needed for Passive Clients
         # Add firewall rule to allow connections on port 5832 for Bomgar Passive Jump Client
-        $GetRule = Get-NetFirewallRule -DisplayName "Bomgar Jump Client Passive" -ErrorAction SilentlyContinue
+        # $GetRule = Get-NetFirewallRule `
+        #     -DisplayName "Bomgar Jump Client" -ErrorAction SilentlyContinue
 
-        if ( $GetRule -eq $null ) {
-
-            New-NetFirewallRule -DisplayName "Bomgar Jump Client Passive" -Direction Inbound -Action Allow -Enabled True -Protocol tcp -LocalPort 5832
-
-        }
+        # if ( $null -eq $GetRule ) {
+        #     New-NetFirewallRule -DisplayName "Bomgar Jump Client" -Direction `
+        #         Inbound -Action Allow -Enabled True -Protocol tcp -LocalPort 5832
+        # }
 
         # ============================================================
         # Wait for the client to register with the appliance
@@ -214,43 +221,35 @@ function Install {
 
         # Get current time
         $Start = Get-Date
-
         # Set the amount of time to wait
         $WaitFor = New-TimeSpan -Minutes 5
 
         do {
-
             # Get the Uninstall Command
             $KeyExists = Get-UninstallCode
-
             Start-Sleep -Seconds 1
-
             $TimedOut = $( ( Get-Date ) - $Start ) -gt $WaitFor
-
         } until ( $KeyExists -or $TimedOut )
 
         if ( $TimedOut -eq $true ) {
-
-            Write-Error "`nERROR:  Doesn't appear the Bomgar Jump Client was able to register with the appliance.`nInstall Parameters:  ${InstallParameters}" -ErrorAction Stop
-
+            Write-Error `
+                "`nDoesn't appear the Bomgar Jump Client was able to register with the appliance.`nInstall Parameters:  ${InstallParameters}" `
+                -ErrorAction Stop
         }
         elseif ( $KeyExists ) {
-
             continue
-
         }
 
     }
     else {
-
-        Write-Error "`nERROR:  Failed to install the Bomgar Jump Client.`nExit code:  $( ${InstallProcess}.ExitCode )`nInstall Parameters:  ${InstallParameters}" -ErrorAction Stop
-
+        Write-Error `
+            "`nERROR:  Failed to install the Bomgar Jump Client.`nExit code:  $( ${InstallProcess}.ExitCode )`nInstall Parameters:  ${InstallParameters}" `
+            -ErrorAction Stop
     }
 
 }
 
 function Get-UninstallCode {
-
     # Get the MSI Product Code
     $ProductCode = Get-MSIInfo -Path ${PSScriptRoot}\${MSI} -Property "ProductCode"
 
@@ -259,29 +258,27 @@ function Get-UninstallCode {
     $BomgarRegistryParameters = Get-ItemProperty -Path $RegistryPath
 
     # Get the Uninstall Command
-    $UninstallCommand = $BomgarRegistryParameters | Select-Object -ExpandProperty "${ProductCode}".Trim()
-
+    $UninstallCommand = $BomgarRegistryParameters | `
+        Select-Object -ExpandProperty "${ProductCode}".Trim()
     return $UninstallCommand
-
 }
 
 function Uninstall {
-
     $UninstallKey = Get-UninstallCode
 
     # Get the Install Directory
     $InstallDirectory = ( Get-Item $UninstallKey ).Directory.FullName
 
     # Perform uninstall
-    $UninstallProcess = Start-Process "${InstallDirectory}\bomgar-scc.exe" -ArgumentList "-pinned win32uninstall silent" -PassThru -Wait
+    $UninstallProcess = Start-Process "${InstallDirectory}\bomgar-scc.exe" `
+        -ArgumentList "-pinned win32uninstall silent /no-spinner -uninstall silent" -PassThru -Wait
 
     # Check the exit code
     if ( $UninstallProcess.ExitCode -ne 0 ) {
-
-        Write-Error "`nERROR:  Failed to install the Bomgar Jump Client.`nExit code:  $( ${UninstallProcess}.ExitCode )" -ErrorAction Stop
-
+        Write-Error `
+            "`nERROR:  Failed to install the Bomgar Jump Client.`nExit code:  $( ${UninstallProcess}.ExitCode )" `
+            -ErrorAction Stop
     }
-
 }
 
 # ============================================================
@@ -293,29 +290,21 @@ $InstallAttempt=0
 
 # Set the values based on the OS Architecture
 if ( $ENV:Processor_Architecture -eq "AMD64" ) {
-
     $MSI = "bomgar-scc-win64.msi"
-
 }
 else {
-
     $MSI = "bomgar-scc-win32.msi"
-
 }
 
 switch ( "${Action}" ) {
-
     "Install" {
         Install
     }
-
     "Uninstall" {
         Uninstall
     }
-
     "Repair" {
         Uninstall
         Install
     }
-
 }
